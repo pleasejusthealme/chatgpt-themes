@@ -1,0 +1,9 @@
+{
+  "manifest_version": 3,
+  "name": "Sumerki Local Theme — experiment",
+  "version": "0.1.0",
+  "description": "Applies local CSS only to ChatGPT desktop app shell pages. Experimental.",
+  "permissions": ["debugger", "alarms"],
+  "host_permissions": ["<all_urls>"],
+  "background": {"service_worker": "background.js"}
+}

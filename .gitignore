@@ -1,0 +1,13 @@
+work/
+*.app/
+*.asar
+*.asar.unpacked/
+*.log
+*.ips
+__pycache__/
+*.py[cod]
+.DS_Store
+.env
+.env.*
+.venv/
+patch-report.json

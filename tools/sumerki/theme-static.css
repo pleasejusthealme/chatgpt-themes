@@ -1,0 +1,15 @@
+/* Сумерки — экспериментальная тема ChatGPT Desktop */
+:root {
+ --color-surface: #171522 !important;
+ --color-surface-secondary: #211d30 !important;
+ --color-surface-tertiary: #2a243c !important;
+ --color-surface-elevated: #2a243c !important;
+ --color-accent: #b9a1ff !important;
+ --text-primary: #eee8fa !important;
+ --main-surface-primary: #171522 !important;
+ --main-surface-secondary: #211d30 !important;
+ --app-shell-panel-background: #211d30 !important;
+}
+html, body { background: #171522 !important; color: #eee8fa !important; }
+::selection { background: #674ca3 !important; color: #fff !important; }
+::-webkit-scrollbar-thumb { background: #514164 !important; border-radius: 8px; }

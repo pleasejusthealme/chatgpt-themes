@@ -1,0 +1,36 @@
+/* Сумерки — экспериментальная тема ChatGPT Desktop */
+:root {
+ --color-surface: #171522 !important;
+ --color-surface-secondary: #211d30 !important;
+ --color-surface-tertiary: #2a243c !important;
+ --color-surface-elevated: #2a243c !important;
+ --color-accent: #b9a1ff !important;
+ --text-primary: #eee8fa !important;
+ --main-surface-primary: #171522 !important;
+ --main-surface-secondary: #211d30 !important;
+ --app-shell-panel-background: #211d30 !important;
+}
+html, body { background: #171522 !important; color: #eee8fa !important; }
+::selection { background: #674ca3 !important; color: #fff !important; }
+::-webkit-scrollbar-thumb { background: #514164 !important; border-radius: 8px; }
+
+/* Geometry stays on the background surface, below all text and controls. */
+body, .bg-surface.h-full, main[class*="MainContentSurface-"] {
+ background-color: #171522 !important;
+ background-image:
+  radial-gradient(circle at center, transparent 0 118px, rgba(185,161,255,.13) 119px 120px, transparent 121px 156px, rgba(185,161,255,.055) 157px 158px, transparent 159px),
+  radial-gradient(ellipse at center, rgba(124,99,195,.10), transparent 65%),
+  linear-gradient(30deg, transparent 49.7%, rgba(185,161,255,.055) 49.9% 50.1%, transparent 50.3%),
+  linear-gradient(150deg, transparent 49.7%, rgba(185,161,255,.055) 49.9% 50.1%, transparent 50.3%) !important;
+ background-size: 560px 560px, 900px 740px, 112px 194px, 112px 194px !important;
+ background-repeat: no-repeat, no-repeat, repeat, repeat !important;
+ background-position: right -110px top -120px, left -300px bottom -340px, 0 0, 0 0;
+ animation: sumerki-geometry-drift 48s ease-in-out infinite alternate;
+}
+@keyframes sumerki-geometry-drift {
+ from { background-position: right -110px top -120px, left -300px bottom -340px, 0 0, 0 0; }
+ to { background-position: right -65px top -75px, left -200px bottom -270px, 28px 48.5px, 28px 48.5px; }
+}
+@media (prefers-reduced-motion: reduce) {
+ body, .bg-surface.h-full, main[class*="MainContentSurface-"] { animation: none !important; }
+}
