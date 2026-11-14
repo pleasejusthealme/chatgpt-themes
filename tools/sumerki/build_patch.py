@@ -6,6 +6,7 @@ import hashlib
 import json
 from pathlib import Path
 import plistlib
+import re
 import struct
 
 
@@ -64,7 +65,20 @@ def manager_script(path, css):
     return source
 
 
-def inject_document(text, css, script=None):
+def inject_document(text, css, script=None, allow_repatch=False):
+    if allow_repatch:
+        matches = list(re.finditer(r'<script id="chatgpt-themes-manager-script">([\s\S]*?)</script>', text))
+        if len(matches) > 1:
+            raise ValueError('Ambiguous existing manager')
+        if matches:
+            old = matches[0]
+            digest = base64.b64encode(hashlib.sha256(old.group(1).encode()).digest()).decode()
+            token = " 'sha256-" + digest + "'"
+            if text.count(token) != 1:
+                raise ValueError('Existing manager CSP does not match')
+            text = text[:old.start()] + text[old.end():]
+            text = text.replace(token, '', 1)
+        text = re.sub(r'<style id="sumerki-bundled-theme">[\s\S]*?</style>', '', text, count=1)
     if 'sumerki-bundled-theme' in text or 'chatgpt-themes-manager-script' in text or text.count('</head>') != 1:
         raise ValueError('Unexpected or already patched HTML document')
     if script is None:
@@ -82,15 +96,18 @@ PROFILE_MENU_PATH = 'webview/assets/async/583085.4250d5c902.js'
 PROFILE_CHILDREN = 'children:[r,c,d,D,p,ee,f,O,et,null,ep,g,y,b,null,_,N,I,T,G]'
 
 
-def inject_profile_menu(text):
-    if text.count(PROFILE_CHILDREN) != 1 or 'chatgpt-themes:open' in text:
-        raise ValueError('Unsupported or already patched profile menu')
+def inject_profile_menu(text, allow_repatch=False):
     icon = '(0,a.jsx)("svg",{width:20,height:20,viewBox:"0 0 24 24",fill:"none","aria-hidden":true,children:(0,a.jsx)("path",{d:"M12 3 3 8l9 5 9-5-9-5ZM3 12l9 5 9-5M3 16l9 5 9-5",stroke:"currentColor",strokeWidth:1.5,strokeLinejoin:"round"})})'
     item = '(0,a.jsx)(H.tJ,{"data-chatgpt-themes-item":"true",leftIcon:' + icon + ',onSelect:()=>{R?.();setTimeout(()=>window.dispatchEvent(new CustomEvent("chatgpt-themes:open")),0)},children:"Темы"})'
-    return text.replace(PROFILE_CHILDREN, PROFILE_CHILDREN.replace('_,N,I', '_,N,' + item + ',I'))
+    patched_children = PROFILE_CHILDREN.replace('_,N,I', '_,N,' + item + ',I')
+    if allow_repatch and text.count(patched_children) == 1:
+        text = text.replace(patched_children, PROFILE_CHILDREN, 1)
+    if text.count(PROFILE_CHILDREN) != 1 or 'chatgpt-themes:open' in text:
+        raise ValueError('Unsupported or already patched profile menu')
+    return text.replace(PROFILE_CHILDREN, patched_children)
 
 
-def build(source_app, css_path, output, manager_path=None):
+def build(source_app, css_path, output, manager_path=None, allow_repatch=False):
     output = output.resolve()
     if output.is_relative_to(source_app.resolve()):
         raise ValueError('Output must be outside the installed application')
@@ -127,7 +144,7 @@ def build(source_app, css_path, output, manager_path=None):
             stream.seek(base + int(entry['offset']))
             original = stream.read(entry['size'])
             text = original.decode()
-            data = inject_document(text, css, script).encode()
+            data = inject_document(text, css, script, allow_repatch).encode()
             patch(name, original, data)
         if script is not None:
             entry = files.get(PROFILE_MENU_PATH)
@@ -135,7 +152,7 @@ def build(source_app, css_path, output, manager_path=None):
                 raise ValueError('Profile menu module not found; unsupported build')
             stream.seek(base + int(entry['offset']))
             original = stream.read(entry['size'])
-            patch(PROFILE_MENU_PATH, original, inject_profile_menu(original.decode()).encode())
+            patch(PROFILE_MENU_PATH, original, inject_profile_menu(original.decode(), allow_repatch).encode())
         ordered = sorted(((name, e, int(e['offset'])) for name, e in files.items()
                           if 'offset' in e and not e.get('unpacked')), key=lambda item: item[2])
         offset = 0

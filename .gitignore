@@ -12,3 +12,4 @@ __pycache__/
 .venv/
 patch-report.json
 node_modules/
+dist/

@@ -4,6 +4,20 @@ Experimental, unofficial custom themes for the ChatGPT desktop client on macOS.
 
 The Sumerki theme adds a dark violet palette and a subtle animated geometric background. A local prototype has been tested with ChatGPT **26.1111.21308 / build 27194**, including repeated launches and an installation into the main app. This is not a general-purpose installer release yet.
 
+## Graphical patcher (macOS prototype)
+
+A native AppKit application now provides app selection, install/update, progress, rollback and an Open ChatGPT button. No Terminal is needed to use the built `.app`. It requires an existing Python 3 installation (Python is not bundled yet).
+
+To build it from source:
+
+```sh
+python3 tools/build_gui.py
+```
+
+Open `dist/ChatGPT Themes Patcher.app`, select ChatGPT, fully quit ChatGPT, and click **Установить / Обновить**. The app prepares and verifies a locally signed replacement before swapping it into place. **Откатить** restores the version saved before the first operation by this GUI; if that version was already patched, rollback restores that patched version, not a vendor-original download.
+
+Backups are stored under `~/Library/Application Support/ChatGPT Themes`, separately for each selected app path. Account profiles and Keychain entries are not copied or edited. The patcher's local re-signing can still cause macOS to request Keychain permission when ChatGPT next starts. This prototype does not suppress that prompt for real accounts.
+
 ## Current state
 
 - CSS theme with reduced-motion support.
@@ -14,12 +28,13 @@ The Sumerki theme adds a dark violet palette and a subtle animated geometric bac
 
 The next test build includes a **Темы** entry in the account menu, directly after Settings, opening a centered theme panel: Sumerki, Ocean, Graphite and the native appearance; geometry and motion switches; cycle duration; persisted selection and cross-window synchronization. The manager is isolated in a Shadow DOM. Its exact inline-script hash is added to CSP; unrestricted inline JavaScript is not enabled. DOM tests pass; this manager build still needs manual verification in ChatGPT.
 
-Theme import, update handling and compatibility with other builds are **not implemented**.
+Theme import, automatic handling of vendor updates and compatibility with other builds are **not implemented**. GUI reapplication of our known patches is supported.
 
 ## Layout
 
 - `tools/sumerki/`: prototype source, theme and launchers.
 - `tools/prepare_copy.py`: builds and locally signs an isolated test copy.
+- `app/Patcher.m`: native GUI; `tools/gui_backend.py`: backup/build/swap operations.
 - `manager/manager.js`: in-app theme controls, bundled into the patched documents.
 - `experiments/extension-probe/`: unsuccessful extension approach, retained for research; do not install it.
 - `docs/architecture.md`: findings and limitations.
