@@ -166,7 +166,7 @@
         self.statusLabel.stringValue=self.supported?@"Готово к установке. Сначала полностью выйдите из ChatGPT через ⌘Q.":@"Эта версия пока не поддерживается. Доступен откат, если есть резервная копия.";
     } else {
         self.progress.doubleValue=100; self.restorable=YES;
-        self.statusLabel.stringValue=[self.operation isEqual:@"restore"]?@"Предыдущая версия восстановлена. Можно открыть ChatGPT.":@"Менеджер установлен. Откройте ChatGPT → меню аккаунта → Темы.";
+        self.statusLabel.stringValue=[self.received[@"unchanged"] boolValue]?@"Менеджер уже актуален. Переподпись не требуется.":([self.operation isEqual:@"restore"]?@"Предыдущая версия восстановлена. Можно открыть ChatGPT.":@"Менеджер установлен. Откройте ChatGPT → меню аккаунта → Темы.");
     }
     [self buttons];
 }

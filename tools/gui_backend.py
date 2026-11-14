@@ -182,8 +182,11 @@ def operate(action, app, state):
                 with tempfile.TemporaryDirectory(prefix='build-',dir=state) as work:
                     output=Path(work)
                     progress('Добавляю меню и менеджер тем',40)
-                    build(app,ROOT/'tools/sumerki/theme.css',output,
+                    report=build(app,ROOT/'tools/sumerki/theme.css',output,
                           manager_path=ROOT/'manager/manager.js',allow_repatch=True)
+                    if report and report['originalHeaderHash']==report['patchedHeaderHash'] and all(c['before']==c['after'] for c in report['changes']):
+                        progress('Менеджер уже актуален',100)
+                        return {'app':str(app),'backup':str(record['baseline']),'action':action,'unchanged':True}
                     archive=stage/'Contents/Resources/app.asar'
                     try:os.replace(output/'app.asar',archive)
                     except OSError as e:

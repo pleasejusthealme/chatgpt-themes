@@ -21,6 +21,7 @@ class RepatchTests(unittest.TestCase):
         self.assertNotIn('window.old=true',new)
         self.assertEqual(new.count('id="chatgpt-themes-manager-script"'),1)
         self.assertEqual(new.count("'sha256-"),1)
+        self.assertEqual(inject_document(new,'','window.new=true;',allow_repatch=True),new)
         self.assertEqual(inject_profile_menu(inject_profile_menu(PROFILE_CHILDREN),True),inject_profile_menu(PROFILE_CHILDREN))
     def test_refuse_unknown_old_manager_hash(self):
         html='<head><meta content="script-src \'self\';"></head>'
@@ -59,6 +60,13 @@ class TransactionTests(unittest.TestCase):
         with patch.object(backend.os,'rename',side_effect=rename):
             with self.assertRaises(OSError):backend.atomic_swap(self.app,stage,park)
         self.assertTrue(self.app.exists());self.assertFalse(park.exists())
+    def test_already_current_manager_is_not_replaced_or_resigned(self):
+        report={'originalHeaderHash':'same','patchedHeaderHash':'same','changes':[{'before':'same','after':'same'}]}
+        with patch.object(backend,'verify'),patch.object(backend,'assert_closed'),patch.object(backend,'clone',side_effect=shutil.copytree),patch.object(backend,'build',return_value=report),patch.object(backend,'patch_framework') as patch_binary,patch.object(backend,'run') as run,contextlib.redirect_stdout(io.StringIO()):
+            result=backend.operate('apply',self.app,self.state)
+            self.assertTrue(result['unchanged']);patch_binary.assert_not_called();run.assert_not_called()
+        self.assertEqual((self.app/'Contents/Resources/app.asar').read_bytes(),b'current')
+        self.assertFalse(list(self.app.parent.glob('*.themes-stage-*.app')))
     def test_running_app_refusal_precedes_copy(self):
         with patch.object(backend,'assert_closed',side_effect=backend.PatcherError('running')),patch.object(backend,'clone') as clone:
             with self.assertRaises(backend.PatcherError):backend.operate('apply',self.app,self.state)

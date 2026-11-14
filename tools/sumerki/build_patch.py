@@ -76,9 +76,10 @@ def inject_document(text, css, script=None, allow_repatch=False):
             token = " 'sha256-" + digest + "'"
             if text.count(token) != 1:
                 raise ValueError('Existing manager CSP does not match')
-            text = text[:old.start()] + text[old.end():]
+            suffix = text[old.end():]
+            text = text[:old.start()] + (suffix[1:] if suffix.startswith('\n') else suffix)
             text = text.replace(token, '', 1)
-        text = re.sub(r'<style id="sumerki-bundled-theme">[\s\S]*?</style>', '', text, count=1)
+        text = re.sub(r'<style id="sumerki-bundled-theme">[\s\S]*?</style>\n?', '', text, count=1)
     if 'sumerki-bundled-theme' in text or 'chatgpt-themes-manager-script' in text or text.count('</head>') != 1:
         raise ValueError('Unexpected or already patched HTML document')
     if script is None:

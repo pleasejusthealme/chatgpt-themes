@@ -14,7 +14,7 @@ To build it from source:
 python3 tools/build_gui.py
 ```
 
-Open `dist/ChatGPT Themes Patcher.app`, select ChatGPT, fully quit ChatGPT, and click **Установить / Обновить**. The app prepares and verifies a locally signed replacement before swapping it into place. **Откатить** restores the version saved before the first operation by this GUI; if that version was already patched, rollback restores that patched version, not a vendor-original download.
+Open `dist/ChatGPT Themes Patcher.app`, select ChatGPT, fully quit ChatGPT, and click **Установить / Обновить**. The app prepares and verifies a locally signed replacement before swapping it into place. If the exact current manager is already present, it skips replacement and re-signing. **Откатить** restores the version saved before the first operation by this GUI; if that version was already patched, rollback restores that patched version, not a vendor-original download.
 
 Backups are stored under `~/Library/Application Support/ChatGPT Themes`, separately for each selected app path. Account profiles and Keychain entries are not copied or edited. The patcher's local re-signing can still cause macOS to request Keychain permission when ChatGPT next starts. This prototype does not suppress that prompt for real accounts.
 
