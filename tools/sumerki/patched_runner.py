@@ -1,5 +1,6 @@
 """Run the locally patched copy with explicit isolation and a launch log. No CDP."""
 import fcntl
+import argparse
 import os
 from pathlib import Path
 import subprocess
@@ -10,6 +11,12 @@ STATE = ROOT / 'work/theme-lab/patched'
 
 
 def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--app-name', default='ChatGPT Theme Test.app')
+    args = parser.parse_args()
+    if Path(args.app_name).name != args.app_name or not args.app_name.endswith('.app'):
+        raise SystemExit('Expected a simple .app name')
+    app = ROOT / 'work' / args.app_name / 'Contents/MacOS/ChatGPT'
     STATE.mkdir(parents=True, exist_ok=True)
     with (STATE / 'runner.lock').open('w') as lock:
         try:
@@ -30,7 +37,7 @@ def main():
         with (STATE / 'launch.log').open('a') as log:
             log.write('\n--- PATCHED TEST START ---\n')
             log.flush()
-            child = subprocess.Popen([str(APP), '--user-data-dir=' + str(profile)],
+            child = subprocess.Popen([str(app), '--user-data-dir=' + str(profile)],
                                      env=env, stdout=log, stderr=log, start_new_session=True)
             try:
                 code = child.wait()

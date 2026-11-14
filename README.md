@@ -12,7 +12,7 @@ The Sumerki theme adds a dark violet palette and a subtle animated geometric bac
 - Embedded integrity-dictionary digest update for the tested Electron/Owl framework.
 - Locally signed test copy, plus experimental installation and restore scripts.
 
-The next test build includes an in-app **Темы** panel: Sumerki, Ocean, Graphite and the native appearance; geometry and motion switches; cycle duration; persisted selection and cross-window synchronization. The manager is isolated in a Shadow DOM. Its exact inline-script hash is added to CSP; unrestricted inline JavaScript is not enabled. DOM tests pass; this manager build still needs manual verification in ChatGPT.
+The next test build includes a **Темы** entry in the account menu, directly after Settings, opening a centered theme panel: Sumerki, Ocean, Graphite and the native appearance; geometry and motion switches; cycle duration; persisted selection and cross-window synchronization. The manager is isolated in a Shadow DOM. Its exact inline-script hash is added to CSP; unrestricted inline JavaScript is not enabled. DOM tests pass; this manager build still needs manual verification in ChatGPT.
 
 Theme import, update handling and compatibility with other builds are **not implemented**.
 

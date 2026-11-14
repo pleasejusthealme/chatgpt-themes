@@ -16,7 +16,8 @@ export function testManager({parseHTML, vm, script}) {
   const a=boot();
   assert.ok(a.document.getElementById('sumerki-bundled-theme')); checks++;
   assert.equal(a.root.getElementById('panel').hidden,true);
-  a.root.getElementById('open').click();
+  assert.equal(a.root.getElementById('open'),null);
+  a.window.dispatchEvent(new a.window.Event('chatgpt-themes:open')); 
   assert.equal(a.root.getElementById('panel').hidden,false);checks++;
   a.click('native');assert.equal(a.document.getElementById('sumerki-bundled-theme'),null);checks++;
   a.click('ocean');assert.match(a.document.getElementById('sumerki-bundled-theme').textContent,/#101d27/);checks++;
@@ -27,7 +28,7 @@ export function testManager({parseHTML, vm, script}) {
   const geometry=b.root.getElementById('geometry');geometry.checked=false;geometry.dispatchEvent(new b.window.Event('change'));
   assert.match(b.document.getElementById('sumerki-bundled-theme').textContent,/background-image:none !important/);checks++;
   vm.runInContext(script,b.context);assert.equal(b.document.querySelectorAll('#chatgpt-themes-manager').length,1);checks++;
-  b.root.getElementById('open').click();b.root.getElementById('close').click();assert.equal(b.root.getElementById('panel').hidden,true);checks++;
+  b.window.dispatchEvent(new b.window.Event('chatgpt-themes:open'));b.root.getElementById('close').click();assert.equal(b.root.getElementById('panel').hidden,true);checks++;
   values.set('chatgpt-themes.settings.v1',JSON.stringify({theme:'unknown',duration:999}));
   const c=boot();assert.equal(c.root.getElementById('duration').value,'120');
   assert.equal(c.root.querySelector('[data-theme="sumerki"]').getAttribute('aria-pressed'),'true');checks++;

@@ -42,12 +42,15 @@ def run(*args):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--source', type=Path, default=Path('/Applications/ChatGPT.app'))
+    parser.add_argument('--name', default='ChatGPT Theme Test.app')
     args = parser.parse_args()
     source = args.source.resolve()
     info = plistlib.loads((source/'Contents/Info.plist').read_bytes())
     if info.get('CFBundleVersion') != '27194' or info.get('CFBundleShortVersionString') != '26.1111.21308':
         raise SystemExit('This prototype only supports build 26.1111.21308 / 27194')
-    destination = ROOT/'work/ChatGPT Theme Test.app'
+    if Path(args.name).name != args.name or not args.name.endswith('.app'):
+        raise SystemExit('Expected a simple .app name')
+    destination = ROOT/'work'/args.name
     if destination.exists():
         raise SystemExit('Test copy already exists; move it aside before rebuilding')
     output = ROOT/'work/bundled-theme-candidate'

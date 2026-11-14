@@ -6,9 +6,17 @@ import unittest
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]/'tools'))
 from prepare_copy import SENTINEL, update_digest
-from sumerki.build_patch import read_header, pack_header, inject_document, manager_script
+from sumerki.build_patch import read_header, pack_header, inject_document, manager_script, inject_profile_menu, PROFILE_CHILDREN
 
 class IntegrityTests(unittest.TestCase):
+    def test_native_menu_item_uses_native_component_after_settings(self):
+        result=inject_profile_menu('prefix '+PROFILE_CHILDREN+' suffix')
+        self.assertIn('_,N,(0,a.jsx)(H.tJ,',result)
+        self.assertIn('children:"Темы"',result)
+        self.assertIn('chatgpt-themes:open',result)
+        with self.assertRaises(ValueError):inject_profile_menu(result)
+        with self.assertRaises(ValueError):inject_profile_menu('unknown version')
+
     def test_manager_csp_authorizes_exact_script_only(self):
         script='(() => { window.test = "Привет"; })();'
         html='<html><head><meta http-equiv="Content-Security-Policy" content="script-src \'self\'; style-src \'self\' \'unsafe-inline\';"></head></html>'

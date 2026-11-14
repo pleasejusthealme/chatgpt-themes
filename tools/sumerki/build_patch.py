@@ -78,6 +78,18 @@ def inject_document(text, css, script=None):
     return text.replace('</head>', addition + '\n</head>')
 
 
+PROFILE_MENU_PATH = 'webview/assets/async/583085.4250d5c902.js'
+PROFILE_CHILDREN = 'children:[r,c,d,D,p,ee,f,O,et,null,ep,g,y,b,null,_,N,I,T,G]'
+
+
+def inject_profile_menu(text):
+    if text.count(PROFILE_CHILDREN) != 1 or 'chatgpt-themes:open' in text:
+        raise ValueError('Unsupported or already patched profile menu')
+    icon = '(0,a.jsx)("svg",{width:20,height:20,viewBox:"0 0 24 24",fill:"none","aria-hidden":true,children:(0,a.jsx)("path",{d:"M12 3 3 8l9 5 9-5-9-5ZM3 12l9 5 9-5M3 16l9 5 9-5",stroke:"currentColor",strokeWidth:1.5,strokeLinejoin:"round"})})'
+    item = '(0,a.jsx)(H.tJ,{"data-chatgpt-themes-item":"true",leftIcon:' + icon + ',onSelect:()=>{R?.();setTimeout(()=>window.dispatchEvent(new CustomEvent("chatgpt-themes:open")),0)},children:"Темы"})'
+    return text.replace(PROFILE_CHILDREN, PROFILE_CHILDREN.replace('_,N,I', '_,N,' + item + ',I'))
+
+
 def build(source_app, css_path, output, manager_path=None):
     output = output.resolve()
     if output.is_relative_to(source_app.resolve()):
@@ -97,6 +109,15 @@ def build(source_app, css_path, output, manager_path=None):
         header = copy.deepcopy(header)
         files = dict(entries(header['files']))
         patches, changes = {}, []
+        def patch(name, original, data):
+            entry = files[name]
+            patches[name] = data
+            block_size = entry.get('integrity', {}).get('blockSize', 4194304)
+            entry['size'] = len(data)
+            entry['integrity'] = {'algorithm': 'SHA256', 'hash': sha(data), 'blockSize': block_size,
+                                  'blocks': [sha(data[i:i+block_size]) for i in range(0, len(data), block_size)]}
+            changes.append({'path': name, 'before': sha(original), 'after': sha(data)})
+
         for name in ('webview/index.html', 'webview/detached-window.html'):
             entry = files.get(name)
             if entry is None:
@@ -107,12 +128,14 @@ def build(source_app, css_path, output, manager_path=None):
             original = stream.read(entry['size'])
             text = original.decode()
             data = inject_document(text, css, script).encode()
-            patches[name] = data
-            block_size = entry.get('integrity', {}).get('blockSize', 4194304)
-            entry['size'] = len(data)
-            entry['integrity'] = {'algorithm': 'SHA256', 'hash': sha(data), 'blockSize': block_size,
-                                  'blocks': [sha(data[i:i+block_size]) for i in range(0, len(data), block_size)]}
-            changes.append({'path': name, 'before': sha(original), 'after': sha(data)})
+            patch(name, original, data)
+        if script is not None:
+            entry = files.get(PROFILE_MENU_PATH)
+            if entry is None:
+                raise ValueError('Profile menu module not found; unsupported build')
+            stream.seek(base + int(entry['offset']))
+            original = stream.read(entry['size'])
+            patch(PROFILE_MENU_PATH, original, inject_profile_menu(original.decode()).encode())
         ordered = sorted(((name, e, int(e['offset'])) for name, e in files.items()
                           if 'offset' in e and not e.get('unpacked')), key=lambda item: item[2])
         offset = 0

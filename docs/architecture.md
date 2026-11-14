@@ -23,3 +23,9 @@ The dictionary digest concatenates UTF-8 path, algorithm and hash for each sorte
 ## Scope and limits
 
 Only macOS arm64 build 26.1111.21308 / 27194 was manually tested. There is no public theme API. Static CSS patching currently requires rebuilding and signing for each theme change. App updates, publisher identity, keychain access and system permissions require care. An in-app theme manager is the next milestone.
+
+## Account-menu integration
+
+The manager has no floating launcher. The tested build's profile-menu module is patched to add one native H.tJ item after Settings. Its selection closes the account menu and dispatches chatgpt-themes:open; the manager opens a centered dialog. Exact module path and render-list checks make unknown layouts fail closed. The module's file/block hashes, archive header and embedded dictionary digest are updated together.
+
+A locally re-signed copy can trigger a macOS Keychain request for Codex Storage Key, even with an isolated Chromium profile. This is separate from theme settings. Theme tests do not require granting that request. Original keychain credentials are never read or published by this project.
