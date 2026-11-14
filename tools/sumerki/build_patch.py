@@ -1,5 +1,6 @@
 """Build a CSS-only ASAR candidate outside the installed app. Does NOT install or sign it."""
 import argparse
+import base64
 import copy
 import hashlib
 import json
@@ -40,7 +41,44 @@ def pack_header(header):
     return struct.pack('<II', 4, len(pickle)) + pickle, raw
 
 
-def build(source_app, css_path, output):
+def manager_script(path, css):
+    palettes = [
+        ('sumerki', 'Сумерки', '#171522', '#211d30', '#2a243c', '#b9a1ff', '#eee8fa', '185,161,255'),
+        ('ocean', 'Океан', '#101d27', '#162833', '#1e3541', '#81d7d0', '#e4f3f4', '129,215,208'),
+        ('graphite', 'Графит', '#191b1e', '#23262a', '#2e3237', '#c3cbd5', '#edf0f3', '195,203,213'),
+    ]
+    themes = []
+    for id, name, surface, secondary, tertiary, accent, ink, rgb in palettes:
+        themed = css
+        for before, after in zip(
+            ['#171522', '#211d30', '#2a243c', '#b9a1ff', '#eee8fa', '185,161,255'],
+            [surface, secondary, tertiary, accent, ink, rgb]):
+            themed = themed.replace(before, after)
+        themes.append({'id': id, 'name': name, 'swatch': surface, 'css': themed})
+    source = path.read_text()
+    if source.count('__THEME_PRESETS__') != 1:
+        raise ValueError('Expected one theme presets placeholder')
+    source = source.replace('__THEME_PRESETS__', json.dumps(themes, ensure_ascii=False).replace('<', '\\u003c'))
+    if '</script' in source.lower():
+        raise ValueError('Unsafe closing script tag in manager')
+    return source
+
+
+def inject_document(text, css, script=None):
+    if 'sumerki-bundled-theme' in text or 'chatgpt-themes-manager-script' in text or text.count('</head>') != 1:
+        raise ValueError('Unexpected or already patched HTML document')
+    if script is None:
+        addition = '<style id="sumerki-bundled-theme">\n' + css + '\n</style>'
+    else:
+        if text.count("script-src 'self'") != 1:
+            raise ValueError('Unsupported script-src policy')
+        digest = base64.b64encode(hashlib.sha256(script.encode()).digest()).decode()
+        text = text.replace("script-src 'self'", "script-src 'self' 'sha256-" + digest + "'", 1)
+        addition = '<script id="chatgpt-themes-manager-script">' + script + '</script>'
+    return text.replace('</head>', addition + '\n</head>')
+
+
+def build(source_app, css_path, output, manager_path=None):
     output = output.resolve()
     if output.is_relative_to(source_app.resolve()):
         raise ValueError('Output must be outside the installed application')
@@ -50,6 +88,7 @@ def build(source_app, css_path, output):
     css = css_path.read_text()
     if '</style' in css.lower():
         raise ValueError('CSS contains a closing style tag')
+    script = manager_script(manager_path, css) if manager_path else None
     with archive.open('rb') as stream:
         header, base, raw = read_header(stream)
         expected = plist['ElectronAsarIntegrity']['Resources/app.asar']['hash']
@@ -67,9 +106,7 @@ def build(source_app, css_path, output):
             stream.seek(base + int(entry['offset']))
             original = stream.read(entry['size'])
             text = original.decode()
-            if 'sumerki-bundled-theme' in text or text.count('</head>') != 1:
-                raise ValueError('Unexpected HTML document: ' + name)
-            data = text.replace('</head>', '<style id="sumerki-bundled-theme">\n' + css + '\n</style>\n</head>').encode()
+            data = inject_document(text, css, script).encode()
             patches[name] = data
             block_size = entry.get('integrity', {}).get('blockSize', 4194304)
             entry['size'] = len(data)
@@ -106,6 +143,8 @@ def build(source_app, css_path, output):
               'originalHeaderHash': expected, 'patchedHeaderHash': sha(patched_raw),
               'themeHash': sha(css.encode()), 'changes': changes, 'installed': False,
               'requiresResigning': True,
+              'themeManager': manager_path is not None,
+              'managerHash': sha(script.encode()) if script else None,
               'requiresFrameworkDictionaryDigestUpdate': True}
     (output / 'patch-report.json').write_text(json.dumps(report, indent=2))
     return report
@@ -116,5 +155,6 @@ if __name__ == '__main__':
     parser.add_argument('--source', type=Path, default=Path('/Applications/ChatGPT.app'))
     parser.add_argument('--css', type=Path, default=Path(__file__).with_name('theme.css'))
     parser.add_argument('--output', type=Path, required=True)
+    parser.add_argument('--manager', type=Path)
     args = parser.parse_args()
-    print(json.dumps(build(args.source, args.css, args.output), indent=2))
+    print(json.dumps(build(args.source, args.css, args.output, args.manager), indent=2))

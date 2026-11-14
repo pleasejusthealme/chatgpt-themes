@@ -1,12 +1,30 @@
 import io
+import base64
+import hashlib
 import sys
 import unittest
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]/'tools'))
 from prepare_copy import SENTINEL, update_digest
-from sumerki.build_patch import read_header, pack_header
+from sumerki.build_patch import read_header, pack_header, inject_document, manager_script
 
 class IntegrityTests(unittest.TestCase):
+    def test_manager_csp_authorizes_exact_script_only(self):
+        script='(() => { window.test = "Привет"; })();'
+        html='<html><head><meta http-equiv="Content-Security-Policy" content="script-src \'self\'; style-src \'self\' \'unsafe-inline\';"></head></html>'
+        result=inject_document(html,'',script)
+        digest=base64.b64encode(hashlib.sha256(script.encode()).digest()).decode()
+        self.assertIn("script-src 'self' 'sha256-"+digest+"'",result)
+        self.assertIn('>'+script+'</script>',result)
+        self.assertNotIn("script-src 'self' 'unsafe-inline'",result)
+        with self.assertRaises(ValueError):inject_document(result,'',script)
+
+    def test_preset_data_cannot_close_script_tag(self):
+        root=Path(__file__).resolve().parents[1]
+        script=manager_script(root/'manager/manager.js','body{--x:"</script><script>"}')
+        self.assertNotIn('</script',script.lower())
+        self.assertNotIn('__THEME_PRESETS__',script)
+
     def test_header_alignment_and_roundtrip(self):
         for n in range(8):
             header={'files': {'x'* (n+1): {'size':3,'offset':'0'}}}

@@ -11,3 +11,4 @@ __pycache__/
 .env.*
 .venv/
 patch-report.json
+node_modules/

@@ -52,7 +52,7 @@ def main():
         raise SystemExit('Test copy already exists; move it aside before rebuilding')
     output = ROOT/'work/bundled-theme-candidate'
     output.mkdir(parents=True, exist_ok=True)
-    build(source, ROOT/'tools/sumerki/theme.css', output)
+    build(source, ROOT/'tools/sumerki/theme.css', output, manager_path=ROOT/'manager/manager.js')
     run('/bin/cp', '-cR', str(source), str(destination))
     shutil.copyfile(output/'app.asar', destination/'Contents/Resources/app.asar')
     patched = plistlib.loads((output/'Info.plist').read_bytes())

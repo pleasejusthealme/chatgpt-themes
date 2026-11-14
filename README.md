@@ -12,12 +12,15 @@ The Sumerki theme adds a dark violet palette and a subtle animated geometric bac
 - Embedded integrity-dictionary digest update for the tested Electron/Owl framework.
 - Locally signed test copy, plus experimental installation and restore scripts.
 
-An in-app theme manager, import UI, update handling and compatibility with other builds are **not implemented**.
+The next test build includes an in-app **Темы** panel: Sumerki, Ocean, Graphite and the native appearance; geometry and motion switches; cycle duration; persisted selection and cross-window synchronization. The manager is isolated in a Shadow DOM. Its exact inline-script hash is added to CSP; unrestricted inline JavaScript is not enabled. DOM tests pass; this manager build still needs manual verification in ChatGPT.
+
+Theme import, update handling and compatibility with other builds are **not implemented**.
 
 ## Layout
 
 - `tools/sumerki/`: prototype source, theme and launchers.
 - `tools/prepare_copy.py`: builds and locally signs an isolated test copy.
+- `manager/manager.js`: in-app theme controls, bundled into the patched documents.
 - `experiments/extension-probe/`: unsuccessful extension approach, retained for research; do not install it.
 - `docs/architecture.md`: findings and limitations.
 - `work/`: local app copies, backups, profiles and logs; ignored by Git.
@@ -40,5 +43,7 @@ The existing `Install-main.command` and `Restore-main.command` are experimental 
 ```sh
 python3 -m unittest discover -s tests -v
 ```
+
+Manager DOM tests use Node.js 22 and `linkedom@0.18.12`; see the workflow for the bundle-generation and test commands.
 
 Only original project code is distributed. No ChatGPT binaries, extracted application source, user profiles, logs, cookies or credentials belong in this repository. Not affiliated with OpenAI.
